@@ -1,4 +1,4 @@
-// 5. Then create a Node application called `bamazonCustomer.js`. Running this application will first display all of the items available for sale. Include the ids, names, and prices of products for sale.
+// Running this application will first display all of the items available for sale.
 
 var inquirer = require('inquirer');
 var colors = require('colors');
@@ -20,16 +20,18 @@ conn.connect(function(err) {
     console.log("Connected as id = " + conn.threadId + '\n');
 })
 
+
 // Function to display available items in table
 function displayItemsInStock() {
 
     conn.query("SELECT * FROM products WHERE stock_quantity > 0", function(err, res) {
-        
         if (err) throw err;
+
+        // Welcome message
         console.log('Welcome to Bamazon! Happy browsing.\n'.cyan);
 
-        // instantiate 
-        var table = new Table({
+        // Display products in styled table with id, name, and price
+        var productsTable = new Table({
             chars: { 'top': '' , 'top-mid': '' , 'top-left': '' , 'top-right': ''
             , 'bottom': '' , 'bottom-mid': '' , 'bottom-left': '' , 'bottom-right': ''
             , 'left': '' , 'left-mid': '' , 'mid': '' , 'mid-mid': ''
@@ -37,20 +39,21 @@ function displayItemsInStock() {
             style: { 'padding-left': 0, 'padding-right': 0 },
             head: ['Id', 'Product', 'Price']
         });
-        
-        // table is an Array, so you can `push`, `unshift`, `splice` and friends
         res.forEach(function(row) {
             var newRow = [row.item_id, row.product_name, + row.price];
-            table.push(newRow);
+            productsTable.push(newRow);
         }) 
-        console.log(table.toString());
+        console.log(productsTable.toString());
         console.log('\n');
 
+        // Call function to check if customer wants to make a purchase
         optionToPurchase();
     });
 }
 displayItemsInStock()
 
+
+// Function to check if customer if they want to make a purchase
 function optionToPurchase() {
     inquirer.prompt([
         {
@@ -60,23 +63,20 @@ function optionToPurchase() {
             choices: ['Yes', 'No']
         }
     ]).then(function(response) {
+        // If yes, call function to select product to purchase
         if (response.option === 'Yes') {
             addToCart();
         }
+        // Otherwise, exit store
         else if (response.option === 'No') {
-            console.log('\nThanks for visiting. Come back soon!\n'.cyan);
+            console.log('\nThank you for visiting. Come back soon!\n'.cyan);
             conn.end();
         }
     })
 }
 
 
-
-// 6. The app should then prompt users with two messages.
-
-//    * The first should ask them the ID of the product they would like to buy.
-//    * The second message should ask how many units of the product they would like to buy.
-
+// Function allows customer to select item and quantity to purchase
 function addToCart() {
 
     console.log('\n');
@@ -96,29 +96,27 @@ function addToCart() {
         var id = parseInt(input.id);
         var quantityRequested = parseInt(input.quantity);
 
+        // Call function to check stock of item requested
         checkStock(id, quantityRequested);
     });
   }
 
-// 7. Once the customer has placed the order, your application should check if your store has enough of the product to meet the customer's request.
 
-//    * If not, the app should log a phrase like `Insufficient quantity!`, and then prevent the order from going through.
-
-// 8. However, if your store _does_ have enough of the product, you should fulfill the customer's order.
-//    * This means updating the SQL database to reflect the remaining quantity.
-//    * Once the update goes through, show the customer the total cost of their purchase.
-
+// Function to check stock of item requested
 function checkStock(id, quantityRequested) {
 
     conn.query(
         "SELECT * FROM products WHERE ?", {item_id: id}, function(err, res) {
 
+            // Retrieve stock quantity from database
             var currentStock = res[0].stock_quantity;
 
+            // Inform customer if stock is insufficient
             if (quantityRequested > currentStock) {
-                console.log("\nSorry, we are unable to fulfill your order at this time. Currently, there are ".red + currentStock + " left in stock.\n".red);
+                console.log("\nSorry, we are unable to fulfill your order at this time. Currently only ".red + currentStock + " left in stock.\n".red);
                 conn.end();
             }
+            // Otherwise, call function to fulfill customer's order
             else {
                 fulfillOrder(id, currentStock, quantityRequested);
             }
@@ -126,22 +124,50 @@ function checkStock(id, quantityRequested) {
     );
 }
 
+// Function to fulfill customer's order
 function fulfillOrder(id, currentStock, quantityRequested) {
+
+    var updatedStock;
+    var totalCost;
 
     conn.query(
         "SELECT * FROM products WHERE ?", {item_id: id}, function(err, res) {
+
+            // Retrieve from database
             var unitPrice = res[0].price;
+            var product = res[0].product_name;
+
+            // Calculate stock left after purchase
+            updatedStock = currentStock - quantityRequested;
+
+            // Calculate total cost for customer
+            totalCost = unitPrice * quantityRequested;
+            totalCost = totalCost.toFixed(2);
+
+            // Display order summary in styled table
+            console.log("\nOrder Summary: \n");
+            var summaryTable = new Table({
+                chars: { 'top': '' , 'top-mid': '' , 'top-left': '' , 'top-right': ''
+                , 'bottom': '' , 'bottom-mid': '' , 'bottom-left': '' , 'bottom-right': ''
+                , 'left': '' , 'left-mid': '' , 'mid': '' , 'mid-mid': ''
+                , 'right': '' , 'right-mid': '' , 'middle': ' ' },
+                style: { 'padding-left': 0, 'padding-right': 0 },
+                head: ['Qty', 'Product', 'Price']
+            });
+            var newRow = [quantityRequested, product, unitPrice];
+            summaryTable.push(newRow);
+            console.log(summaryTable.toString());
+
+            // Update stock remaining in database, display total and thank customer
+            conn.query("UPDATE products SET ? WHERE ?", [{stock_quantity: updatedStock}, {item_id: id}], 
+                function(err, res) {
+                    console.log("\nTotal: $" + totalCost);
+                    console.log("\nThank you for shopping at Bamazon!\n".cyan);
+                    conn.end();
+                }
+            );
         }
     );
-
-    var updatedStock = currentStock - quantityRequested;
-    var totalCost = 
-
-    connection.query("UPDATE products SET ? WHERE ?", [{stock_quantity: updatedStock}, {item_id: id}], 
-    function(err, res) {
-        console.log("Your total cost for " + requested.quantity + " " + productName + " is $" + purchaseCost + "\nThank you for shopping with WHAMazon!\n--------------------------------------------------\n");
-    }
-);
 }
 
 
