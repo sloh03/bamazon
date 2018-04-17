@@ -11,7 +11,7 @@ Once the order is placed, the application checks if the store's stock is suffici
 
 If the stock is sufficient, the order summary and total cost is displayed for the customer.
 
-![Alt text](images/Bamazon8.png?raw=true "Bamazon")
+![Alt text](images/8Bamazon.png?raw=true "Bamazon")
 
 ## Bonus Features
 The `colors` npm package is used to style text and the `CLI-table` npm package is used to style tables in the command window.
