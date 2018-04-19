@@ -136,13 +136,21 @@ function fulfillOrder(id, currentStock, quantityRequested) {
             // Retrieve from database
             var unitPrice = res[0].price;
             var product = res[0].product_name;
+            var totalSales = res[0].product_sales;
+            totalSales = parseInt(totalSales);
+            console.log("TS: " + totalSales);
 
             // Calculate stock left after purchase
             updatedStock = currentStock - quantityRequested;
 
             // Calculate total cost for customer
-            totalCost = unitPrice * quantityRequested;
-            totalCost = totalCost.toFixed(2);
+            customerTotal = unitPrice * quantityRequested;
+            customerTotal = customerTotal.toFixed(2);
+
+            // Calculate total sale revenue
+            var newRevenueTotal = parseFloat(customerTotal) + parseFloat(totalSales);
+            newRevenueTotal = newRevenueTotal.toFixed(2);
+            console.log("NT: " + newRevenueTotal)
 
             // Display order summary in styled table
             console.log("\nOrder Summary: \n");
@@ -159,9 +167,18 @@ function fulfillOrder(id, currentStock, quantityRequested) {
             console.log(summaryTable.toString());
 
             // Update stock remaining in database, display total and thank customer
-            conn.query("UPDATE products SET ? WHERE ?", [{stock_quantity: updatedStock}, {item_id: id}], 
+            conn.query("UPDATE products SET ? WHERE ?", 
+                [
+                    {
+                        stock_quantity: updatedStock, 
+                        product_sales: newRevenueTotal
+                    }, 
+                    {
+                        item_id: id
+                    }
+                ], 
                 function(err, res) {
-                    console.log("\nTotal: $" + totalCost);
+                    console.log("\nTotal: $" + customerTotal);
                     console.log("\nThank you for shopping at Bamazon!\n".cyan);
                     conn.end();
                 }
