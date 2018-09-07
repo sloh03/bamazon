@@ -1,9 +1,9 @@
-# bamazon
+# Bamazon Store
 
-This is a command-line store similar to Amazon built with MySQL. The app will take in orders from customers and deplete stock from the store's inventory.
+This is a command-line store similar built with MySQL. The app will take in orders from customers and deplete stock from the store's inventory.
 
 ## Function
-Running the Node application `bamazonCustomer.js` will display all available items for sale. The customer will then be given the option to purchase products.
+Running `bamazonCustomer.js` will display all available items for sale. The customer will then be given the option to purchase products.
 
 If the customer chooses to make a purchase, they will be prompted to enter the ID and quantity of the desired product.
 
